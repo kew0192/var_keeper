@@ -1,0 +1,51 @@
+name: Pull Request To Dev
+run-name: Run Integration Tests
+on:
+  pull_request:
+    branches:
+      - 'dev'
+jobs:
+  integration_testing:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Create virtual env
+        run: python3 -m venv venv
+      
+      - name: Install requirements
+        run: |
+          source venv/bin/activate
+          pip install -r requirements.txt
+      
+      - name: Run app and test
+        run: |
+          source venv/bin/activate
+          # Запускаем приложение в фоне
+          python src/app/app.py &
+          APP_PID=$!
+          echo "App PID: $APP_PID"
+          
+          # Ждем запуска
+          sleep 10
+          
+          # Проверяем, работает ли приложение
+          echo "Testing connection..."
+          RESPONSE=$(curl -s http://127.0.0.1:5001/ 2>&1)
+          CURL_EXIT=$?
+          
+          echo "Curl exit code: $CURL_EXIT"
+          echo "Response: $RESPONSE"
+          
+          # Останавливаем приложение
+          kill $APP_PID 2>/dev/null || true
+          
+          # Проверяем результат
+          if [ "$RESPONSE" != "Hello, World!" ]; then
+            echo "Integration Test FAILED"
+            exit 1
+          else
+            echo "Integration Test PASS"
+            exit 0
+          fi
