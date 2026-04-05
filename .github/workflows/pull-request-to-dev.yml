@@ -21,6 +21,7 @@ jobs:
           source venv/bin/activate
           nohup python src/app/app.py &
           echo $! > app_pid
+          sleep 5
       - name: Test GET-request
         shell: bash
         run: |
