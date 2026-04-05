@@ -10,22 +10,42 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      
       - name: Create virtual env
         run: python3 -m venv venv
+      
       - name: Install requirements
         run: |
           source venv/bin/activate
           pip install -r requirements.txt
-      - name: Run app
+      
+      - name: Run app and test
         run: |
           source venv/bin/activate
-          nohup python src/app/app.py &
-          echo $! > app_pid
-          sleep 5
-      - name: Test GET-request
-        shell: bash
-        run: |
-          chmod +x ./test/integration-tests.sh
-          ./test/integration-tests.sh
-      - name: Stop app
-        run: kill -15 `cat app_pid`
+          # Запускаем приложение в фоне
+          python src/app/app.py &
+          APP_PID=$!
+          echo "App PID: $APP_PID"
+          
+          # Ждем запуска
+          sleep 10
+          
+          # Проверяем, работает ли приложение
+          echo "Testing connection..."
+          RESPONSE=$(curl -s http://127.0.0.1:5000/ 2>&1)
+          CURL_EXIT=$?
+          
+          echo "Curl exit code: $CURL_EXIT"
+          echo "Response: $RESPONSE"
+          
+          # Останавливаем приложение
+          kill $APP_PID 2>/dev/null || true
+          
+          # Проверяем результат
+          if [ "$RESPONSE" != "Hello, World!" ]; then
+            echo "Integration Test FAILED"
+            exit 1
+          else
+            echo "Integration Test PASS"
+            exit 0
+          fi
