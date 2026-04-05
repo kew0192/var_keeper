@@ -7,45 +7,43 @@ on:
 jobs:
   integration_testing:
     runs-on: self-hosted
+    container: python:3.12.3-slim
+    services:
+      db:
+        image: mysql
+        env:
+          MYSQL_ROOT_PASSWORD: 123
+        options: >-
+          --health-cmd "mysqladmin ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Create virtual env
-        run: python3 -m venv venv
-      
       - name: Install requirements
-        run: |
-          source venv/bin/activate
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
       
-      - name: Run app and test
+      - name: Run app
+        run: python3 ./src/app/app.py &
+      
+      - name: Install curl
+        run: apt-get -y update; apt-get -y install curl
+      
+      - name: Set variable a in 123
+        run: curl -X POST -F 'value=123' http://localhost:5001/var/a
+      
+      - name: Test getting the value of a variable
         run: |
-          source venv/bin/activate
-          # Запускаем приложение в фоне
-          python src/app/app.py &
-          APP_PID=$!
-          echo "App PID: $APP_PID"
-          
-          # Ждем запуска
-          sleep 10
-          
-          # Проверяем, работает ли приложение
-          echo "Testing connection..."
-          RESPONSE=$(curl -s http://127.0.0.1:5001/ 2>&1)
-          CURL_EXIT=$?
-          
-          echo "Curl exit code: $CURL_EXIT"
-          echo "Response: $RESPONSE"
-          
-          # Останавливаем приложение
-          kill $APP_PID 2>/dev/null || true
-          
-          # Проверяем результат
-          if [ "$RESPONSE" != "Hello, World!" ]; then
-            echo "Integration Test FAILED"
+          VALUE=$(curl http://localhost:5001/var/a)
+          if [ "$VALUE" != "123" ]; then
+            echo "Got: $VALUE, Expected: 123"
             exit 1
           else
             echo "Integration Test PASS"
-            exit 0
           fi
+      
+      - name: Clean the workspace
+        if: ${{ always() }}
+        run: find $GITHUB_WORKSPACE -mindepth 1 -delete
