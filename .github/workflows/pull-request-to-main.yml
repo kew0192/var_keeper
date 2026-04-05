@@ -38,6 +38,7 @@ jobs:
         run: |
           VALUE=$(curl http://localhost:5001/var/a)
           if [ "$VALUE" != "123" ]; then
+            echo "Got: $VALUE, Expected: 123"
             exit 1
           else
             echo "Integration Test PASS"

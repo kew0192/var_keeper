@@ -14,19 +14,19 @@ def init_db():
             print(f'Connection to db (attempt {attempt + 1}/{max_retries}):', end='')
             connection = connect(host='db', user='root', password='123')
             print(' OK')
-            
+
             print('Create db:', end='')
             create_db_query = "CREATE DATABASE IF NOT EXISTS vars"
             with connection.cursor() as cursor:
                 cursor.execute(create_db_query)
             print(' OK')
-            
+
             print('Change db:', end='')
             use_db_query = "USE vars"
             with connection.cursor() as cursor:
                 cursor.execute(use_db_query)
             print(' OK')
-            
+
             print('Create table:', end='')
             create_table_query = """
             CREATE TABLE IF NOT EXISTS vars(
