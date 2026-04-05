@@ -32,7 +32,7 @@ jobs:
           
           # Проверяем, работает ли приложение
           echo "Testing connection..."
-          RESPONSE=$(curl -s http://127.0.0.1:5000/ 2>&1)
+          RESPONSE=$(curl -s http://127.0.0.1:5001/ 2>&1)
           CURL_EXIT=$?
           
           echo "Curl exit code: $CURL_EXIT"
